@@ -43,8 +43,6 @@ dc <- dc[dc$Country == "USA", ]
 
 # --- 2. Construct lifecycle timing variables --------------------------------
 
-dc$year_built <- as.numeric(dc$`Year Built`)
-
 dc <- dc %>%
   mutate(
     year_operational    = as.numeric(str_sub(`Operational Quarter`, 1, 4)),
@@ -56,27 +54,47 @@ dc <- dc %>%
     )
   )
 
-dc$year_retrofitted      <- as.numeric(dc$`Year Retrofitted`)
-dc$year_decommissioned   <- as.numeric(dc$`Decommissioned Year`)
-dc$quarter_decommissioned <- as.numeric(dc$`Decommissioned Quarter`)
-
-# Drop original string timing columns
 dc <- dc %>%
-  select(-`Year Built`, -`Operational Quarter`, -`Year Retrofitted`,
-         -`Decommissioned Year`, -`Decommissioned Quarter`)
+  mutate(
+    across(
+      c(`Year Built`, `Year Retrofitted`, `Decommissioned Year`, `Decommissioned Quarter`),
+      ~ as.numeric(.x)
+    )
+  ) %>%
+  rename(
+    year_built            = `Year Built`,
+    year_retrofitted      = `Year Retrofitted`,
+    year_decommissioned   = `Decommissioned Year`,
+    quarter_decommissioned = `Decommissioned Quarter`
+  )
 
 
-# --- 3. Cast categorical variables into factor format ------------------------
+dc <- dc %>%
+  mutate(
+    across(
+      c(`Operational Status`, `Datacenter Type`, `Single/Multi Tenant`),
+      as.factor
+    )
+  ) %>%
+  rename(
+    operational_status = `Operational Status`,
+    center_type        = `Datacenter Type`,
+    tenant_type        = `Single/Multi Tenant`
+  )
 
-dc$operational_status <- as.factor(dc$`Operational Status`)
-dc$center_type        <- as.factor(dc$`Datacenter Type`)
-dc$tenant_type        <- as.factor(dc$`Single/Multi Tenant`)
 
+# --- 3. Assign county & state using geospatial matching ----------------------
 
-# --- 4. Assign county & state using geospatial matching ----------------------
-
-dc$latitude  <- as.numeric(dc$Latitude)
-dc$longitude <- as.numeric(dc$Longitude)
+dc <- dc %>%
+  mutate(
+    across(c(Latitude, Longitude),
+    ~ as.numeric(.x)
+    )
+  ) %>%
+  rename(
+    latitude  = Latitude,
+    longitude = Longitude
+  )
 
 dc <- dc %>%
   mutate(
@@ -117,9 +135,10 @@ dc <- dc %>%
   left_join(dc_with_geo, by = "row_id")
 
 
-# --- 5. Manual county/state corrections -------------------------------------
+# --- 4. Manual county/state corrections --------------------------------------
 
-# Manual fixes for rows without usable geospatial data
+# Manually fix rows without usable geospatial data
+# Location correction based on database city/state information
 dc[dc$row_id == 1817, ]$county <- "Cascade"
 dc[dc$row_id == 1817, ]$state_ab <- "MT"
 dc[dc$row_id == 1817, ]$state <- "Montana"
@@ -163,15 +182,15 @@ dc[dc$row_id == 4277, ]$state <- "Texas"
 # Remove facilities still lacking county information
 dc <- dc[!is.na(dc$county), ]
 
-
-# --- 6. Compare reported vs. geocoded state & select variables --------------
-
+# Note: I found 6 disagreements between state derived from geospatial data
+# and state reported by database. Coordinate check using Google Maps confirms
+# validity of geospatial-derived state over reported state
 dc$state_og <- dc$`State or Province`
-
 dc_disagree <- dc %>%
   filter(!is.na(state), !is.na(state_og), state != state_og)
 
-# Select and rename final analysis variables
+
+# --- 5. Select and rename final analysis variables ---------------------------
 dc <- dc %>%
   select(
     Company, `Datacenter Name`, `Datacenter ID`, `MI Datacenter ID`,
@@ -193,7 +212,7 @@ names(dc)[c(1:11, 13:14, 27)] <- c(
 )
 
 
-# --- 7. Reconcile operational timing and status ------------------------------
+# --- 6. Reconcile operational timing and status ------------------------------
 
 # Backfill missing operational year for facilities marked Operational
 dc <- dc %>%
@@ -206,6 +225,7 @@ dc <- dc %>%
   )
 
 # Correct status for two facilities with year_built after 2025
+# Status correction based on Google Map satellite imagery
 dc[
   !is.na(dc$operational_status) &
     !is.na(dc$year_built) &
@@ -223,7 +243,7 @@ dc[
 dc$operational_status <- as.factor(dc$operational_status)
 
 
-# --- 8. Export cleaned dataset ----------------------------------------------
+# --- 7. Export cleaned dataset -----------------------------------------------
 
 write.csv(
   dc,
