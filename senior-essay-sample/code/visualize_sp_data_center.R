@@ -18,10 +18,10 @@
 #   - senior-essay-sample/clean-data/sp_data_center_clean.csv
 #
 # Outputs:
-#   - senior-essay-sample/output/operational_stock.png
-#   - senior-essay-sample/output/utility_demand.png
-#   - senior-essay-sample/output/county_map.png
-#   - senior-essay-sample/output/rack_power_density.png
+#   - senior-essay-sample/output/fig1_operational_stock.png
+#   - senior-essay-sample/output/fig2_utility_demand.png
+#   - senior-essay-sample/output/fig3_county_map.png
+#   - senior-essay-sample/output/fig4_rack_power_density.png
 # ============================================================
 
 
