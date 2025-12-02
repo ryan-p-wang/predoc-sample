@@ -1,7 +1,7 @@
 # ============================================================
 # Title: Visualizing S&P Global Data Center Patterns
 # Author: Ryan Wang
-# Project: Senior Essay – AI Data Center Crowding-Out
+# Project: Senior Essay – When AI comes to Town
 # Last updated: 2025-10-30
 #
 # Description:

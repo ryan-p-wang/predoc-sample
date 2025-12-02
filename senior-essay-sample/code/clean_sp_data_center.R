@@ -1,7 +1,7 @@
 # ============================================================
 # Title: Cleaning and Harmonizing S&P Global Data Center Data
 # Author: Ryan Wang
-# Project: Senior Essay – AI Data Center Crowding-Out
+# Project: Senior Essay – When AI comes to Town
 # Last updated: 2025-10-29
 #
 # Description:
